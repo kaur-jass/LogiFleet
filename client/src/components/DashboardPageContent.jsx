@@ -1,49 +1,102 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { AreaChart, Area, BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import Card from './Card';
 import Button from './Button';
 import ChartContainer from './ChartContainer';
 import Table from './Table';
 import Badge from './Badge';
-import { dashboardKpis, recentTrips, fuelLogs, recentExpenses } from '../services/mockData';
+import { dashboardKpis } from '../services/mockData';
+import { getDashboardKpis } from '../services/dashboardService';
+import { getTrips } from '../services/tripService';
+import { getFuelLogs } from '../services/fuelService';
+import { getExpenses } from '../services/expenseService';
 
 const statusVariant = {
-  Scheduled: 'info',
-  'On Trip': 'warning',
-  Completed: 'success',
-  Cancelled: 'danger',
+  DRAFT: 'info',
+  DISPATCHED: 'warning',
+  COMPLETED: 'success',
+  CANCELLED: 'danger',
 };
 
 const statusLabel = (status) => <Badge variant={statusVariant[status] || 'neutral'}>{status}</Badge>;
 
 const columns = [
   { key: 'id', label: 'Trip ID' },
-  { key: 'vehicle', label: 'Vehicle' },
-  { key: 'driver', label: 'Driver' },
+  { key: 'vehicleId', label: 'Vehicle' },
+  { key: 'driverId', label: 'Driver' },
   { key: 'destination', label: 'Destination' },
   { key: 'status', label: 'Status', render: (row) => statusLabel(row.status) },
-  { key: 'revenue', label: 'Revenue', render: (row) => `₹${row.revenue.toLocaleString()}` },
+  { key: 'expectedRevenue', label: 'Expected Revenue', render: (row) => `₹${row.expectedRevenue?.toLocaleString() || 0}` },
 ];
 
 export default function DashboardPageContent() {
+  const [kpis, setKpis] = useState(null);
+  const [recentTrips, setRecentTrips] = useState([]);
+  const [recentFuel, setRecentFuel] = useState([]);
+  const [recentExp, setRecentExp] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState("");
+
   const chartData = useMemo(() => dashboardKpis.tripsPerMonth, []);
   const fuelData = useMemo(() => dashboardKpis.fuelConsumption, []);
   const expenseData = useMemo(() => dashboardKpis.expenseDistribution, []);
   const revenueData = useMemo(() => dashboardKpis.revenueExpense, []);
 
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const userRole = localStorage.getItem("role");
+        setRole(userRole);
+
+        // Fetch KPIs
+        const kpiRes = await getDashboardKpis();
+        setKpis(kpiRes.data);
+
+        // Fetch Trips
+        const tripsRes = await getTrips();
+        setRecentTrips(tripsRes.data?.slice(0, 5) || []);
+
+        // Fetch Fuel Logs
+        const fuelRes = await getFuelLogs();
+        setRecentFuel(fuelRes.data?.slice(0, 5) || []);
+
+        // Fetch Expenses if allowed
+        if (userRole === "FLEET_MANAGER" || userRole === "FINANCIAL_ANALYST") {
+          const expRes = await getExpenses();
+          setRecentExp(expRes.data?.slice(0, 5) || []);
+        }
+      } catch (err) {
+        console.error("Dashboard loading error", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center text-sm font-medium text-slate-500">
+        Loading fleet dashboard...
+      </div>
+    );
+  }
+
+  const totalVehicles = (kpis?.activeVehicles || 0) + (kpis?.availableVehicles || 0) + (kpis?.vehiclesInMaintenance || 0);
+
   return (
     <div className="space-y-8">
       <div className="grid gap-4 xl:grid-cols-4">
-        <Card title="Total Trips" value={dashboardKpis.totalTrips.toLocaleString()} />
-        <Card title="Active Trips" value={dashboardKpis.activeTrips.toLocaleString()} />
-        <Card title="Fuel Cost" value={`₹${dashboardKpis.fuelCost.toLocaleString()}`} />
-        <Card title="Maintenance Cost" value={`₹${dashboardKpis.maintenanceCost.toLocaleString()}`} />
+        <Card title="Total Vehicles" value={totalVehicles.toString()} />
+        <Card title="Active Trips" value={(kpis?.activeTrips || 0).toString()} />
+        <Card title="Vehicles in Maintenance" value={(kpis?.vehiclesInMaintenance || 0).toString()} />
+        <Card title="Drivers on Duty" value={(kpis?.driversOnDuty || 0).toString()} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Card title="Total Expenses" value={`₹${dashboardKpis.totalExpenses.toLocaleString()}`} />
-        <Card title="Revenue" value={`₹${dashboardKpis.revenue.toLocaleString()}`} />
-        <Card title="Vehicle ROI" value={dashboardKpis.vehicleRoi} />
+        <Card title="Fleet Utilization" value={`${kpis?.fleetUtilizationPct || 0}%`} />
+        <Card title="Pending Trips" value={(kpis?.pendingTrips || 0).toString()} />
+        <Card title="Active Vehicles" value={(kpis?.activeVehicles || 0).toString()} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-3">
@@ -115,10 +168,12 @@ export default function DashboardPageContent() {
 
         <ChartContainer title="Quick Actions">
           <div className="space-y-4">
-            <Button className="w-full">Create Trip</Button>
-            <Button className="w-full bg-slate-900 hover:bg-slate-800">Add Fuel Log</Button>
-            <Button className="w-full bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">Add Expense</Button>
-            <Button className="w-full bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700">View Reports</Button>
+            <Button className="w-full" onClick={() => window.location.href = '/trips'}>Manage Trips</Button>
+            <Button className="w-full bg-slate-900 hover:bg-slate-800" onClick={() => window.location.href = '/fuel'}>Add Fuel Log</Button>
+            {(role === "FLEET_MANAGER" || role === "FINANCIAL_ANALYST") && (
+              <Button className="w-full bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700" onClick={() => window.location.href = '/expenses'}>Add Expense</Button>
+            )}
+            <Button className="w-full bg-slate-100 text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700" onClick={() => window.location.href = '/reports'}>View Reports & ROI</Button>
           </div>
         </ChartContainer>
       </div>
@@ -126,36 +181,50 @@ export default function DashboardPageContent() {
       <div className="grid gap-4 xl:grid-cols-3">
         <div className="xl:col-span-2">
           <Card title="Recent Trips">
-            <Table columns={columns} data={recentTrips} />
+            {recentTrips.length > 0 ? (
+              <Table columns={columns} data={recentTrips} />
+            ) : (
+              <div className="p-4 text-sm text-slate-500">No recent trips logged.</div>
+            )}
           </Card>
         </div>
         <div className="space-y-4">
           <Card title="Latest Fuel Logs">
             <div className="space-y-3">
-              {fuelLogs.map((log) => (
-                <div key={log.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-                  <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
-                    <span>{log.vehicle}</span>
-                    <span>{log.date}</span>
+              {recentFuel.length > 0 ? (
+                recentFuel.map((log) => (
+                  <div key={log.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
+                      <span>Vehicle: {log.vehicleId}</span>
+                      <span>{new Date(log.date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="mt-2 text-slate-900 dark:text-white">Station: {log.station} · {log.liters}L · ₹{log.cost.toLocaleString()}</div>
                   </div>
-                  <div className="mt-2 text-slate-900 dark:text-white">{log.station} · {log.liters}L · ₹{log.cost.toLocaleString()}</div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="p-4 text-sm text-slate-500">No fuel logs logged.</div>
+              )}
             </div>
           </Card>
-          <Card title="Latest Expenses">
-            <div className="space-y-3">
-              {recentExpenses.map((expense) => (
-                <div key={expense.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
-                  <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
-                    <span>{expense.type}</span>
-                    <span>{expense.date}</span>
-                  </div>
-                  <div className="mt-2 text-slate-900 dark:text-white">{expense.vehicle} · ₹{expense.amount.toLocaleString()}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {(role === "FLEET_MANAGER" || role === "FINANCIAL_ANALYST") && (
+            <Card title="Latest Expenses">
+              <div className="space-y-3">
+                {recentExp.length > 0 ? (
+                  recentExp.map((expense) => (
+                    <div key={expense.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
+                      <div className="flex items-center justify-between text-sm text-slate-600 dark:text-slate-300">
+                        <span>{expense.type}</span>
+                        <span>{new Date(expense.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="mt-2 text-slate-900 dark:text-white">Vehicle: {expense.vehicleId} · ₹{expense.amount.toLocaleString()}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-4 text-sm text-slate-500">No recent expenses logged.</div>
+                )}
+              </div>
+            </Card>
+          )}
         </div>
       </div>
     </div>

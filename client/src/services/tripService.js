@@ -12,8 +12,8 @@ export const dispatchTrip = async (id) => {
   return API.post(`/trips/${id}/dispatch`).then((res) => res.data);
 };
 
-export const completeTrip = async (id) => {
-  return API.post(`/trips/${id}/complete`).then((res) => res.data);
+export const completeTrip = async (id, payload) => {
+  return API.post(`/trips/${id}/complete`, payload).then((res) => res.data);
 };
 
 export const cancelTrip = async (id) => {

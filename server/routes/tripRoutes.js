@@ -16,13 +16,15 @@ import {
   completeTripSchema,
 } from "../validators/tripValidator.js";
 
+import { cacheMiddleware } from "../middleware/cacheMiddleware.js";
+
 const router = express.Router();
 
 // All trip routes require authentication
 router.use(protect);
 
-router.get("/", validateQuery(getTripsQuerySchema), getTrips);
-router.get("/:id", getTripById);
+router.get("/", cacheMiddleware, validateQuery(getTripsQuerySchema), getTrips);
+router.get("/:id", cacheMiddleware, getTripById);
 
 // Writes are restricted to DRIVER and FLEET_MANAGER roles and validated with Zod schemas
 router.post("/", authorize("DRIVER", "FLEET_MANAGER"), validateBody(createTripSchema), createTrip);

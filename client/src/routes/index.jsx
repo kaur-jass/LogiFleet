@@ -1,11 +1,14 @@
+import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import AppLayout from '../layouts/AppLayout';
-import DashboardPage from '../pages/DashboardPage';
-import AuthForm from '../components/AuthForm';
-import TripsPage from '../pages/TripsPage';
-import FuelPage from '../pages/FuelPage';
-import ExpensesPage from '../pages/ExpensesPage';
-import ReportsPage from '../pages/ReportsPage';
+
+// Lazy load route pages to support React Suspense boundaries
+const DashboardPage = React.lazy(() => import('../pages/DashboardPage'));
+const AuthForm = React.lazy(() => import('../components/AuthForm'));
+const TripsPage = React.lazy(() => import('../pages/TripsPage'));
+const FuelPage = React.lazy(() => import('../pages/FuelPage'));
+const ExpensesPage = React.lazy(() => import('../pages/ExpensesPage'));
+const ReportsPage = React.lazy(() => import('../pages/ReportsPage'));
 
 const router = createBrowserRouter([
   {

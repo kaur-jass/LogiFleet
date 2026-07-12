@@ -5,13 +5,15 @@ import { authorize } from "../middleware/roleMiddleware.js";
 import { validateQuery } from "../middleware/validationMiddleware.js";
 import { exportCsvQuerySchema } from "../validators/reportValidator.js";
 
+import { cacheMiddleware } from "../middleware/cacheMiddleware.js";
+
 const router = express.Router();
 
 // All report routes require authentication
 router.use(protect);
 
-router.get("/vehicle/:id", getVehicleReport);
-router.get("/fleet-summary", getFleetSummary);
+router.get("/vehicle/:id", cacheMiddleware, getVehicleReport);
+router.get("/fleet-summary", cacheMiddleware, getFleetSummary);
 
 // CSV export requires FLEET_MANAGER or FINANCIAL_ANALYST roles
 router.get("/export.csv", authorize("FLEET_MANAGER", "FINANCIAL_ANALYST"), validateQuery(exportCsvQuerySchema), exportCsv);

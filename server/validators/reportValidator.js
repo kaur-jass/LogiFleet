@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const exportCsvQuerySchema = z.object({
-  scope: z.enum(["fleet", "vehicle"]),
+  scope: z.enum(["fleet", "vehicle", "trips"]),
   id: z.string().uuid("Vehicle ID must be a valid UUID").optional(),
 }).refine(
   (data) => {

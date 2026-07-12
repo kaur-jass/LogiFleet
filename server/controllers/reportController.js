@@ -73,10 +73,19 @@ export const getVehicleReport = async (req, res) => {
     const metrics = calculateVehicleMetrics(vehicle, totalFleetTripsCount);
 
     return successResponse(res, {
+      vehicleId: vehicle.id,
+      make: vehicle.name,
+      model: vehicle.model,
+      licensePlate: vehicle.regNumber,
       fuelEfficiency: metrics.fuelEfficiency,
       operationalCost: metrics.operationalCost,
       roi: metrics.roi,
       utilizationPct: metrics.utilizationPct,
+      totalDistance: metrics.totalDistance,
+      totalFuelConsumed: vehicle.trips.filter(t => t.status === "COMPLETED").reduce((acc, t) => acc + (t.fuelConsumed || 0), 0) || vehicle.fuelLogs.reduce((acc, f) => acc + f.liters, 0),
+      totalFuelCost: vehicle.fuelLogs.reduce((acc, f) => acc + f.cost, 0),
+      totalExpenseCost: vehicle.maintenanceLogs.reduce((acc, m) => acc + m.cost, 0),
+      totalRevenue: metrics.totalRevenue,
     }, 200);
   } catch (error) {
     console.error("GetVehicleReport Error:", error);
@@ -109,9 +118,13 @@ export const getFleetSummary = async (req, res) => {
       return {
         vehicleId: v.id,
         regNumber: v.regNumber,
+        name: v.name,
+        model: v.model,
+        totalDistance: metrics.totalDistance,
         fuelEfficiency: metrics.fuelEfficiency,
         operationalCost: metrics.operationalCost,
         roi: metrics.roi,
+        totalTrips: v.trips.filter(t => t.status === "COMPLETED").length,
       };
     });
 
@@ -157,6 +170,28 @@ export const exportCsv = async (req, res) => {
       res.setHeader("Content-Disposition", "attachment; filename=fleet_summary.csv");
       return res.status(200).send(csvContent);
     } 
+
+    if (scope === "trips") {
+      const trips = await prisma.trip.findMany({
+        include: {
+          vehicle: true,
+          driver: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      let csvContent = "Trip ID,Source,Destination,Status,Vehicle Registration,Driver Name,Cargo Weight (kg),Planned Distance (km),Actual Distance (km),Fuel Consumed (L),Revenue (INR),Created At,Dispatched At,Completed At,Cancelled At\n";
+
+      for (const t of trips) {
+        csvContent += `"${t.id}","${t.source}","${t.destination}","${t.status}","${t.vehicle ? t.vehicle.regNumber : "N/A"}","${t.driver ? t.driver.name : "N/A"}",${t.cargoWeight},${t.plannedDistance},${t.actualDistance || 0},${t.fuelConsumed || 0},${t.revenue || 0},"${t.createdAt ? t.createdAt.toISOString() : ""}","${t.dispatchedAt ? t.dispatchedAt.toISOString() : ""}","${t.completedAt ? t.completedAt.toISOString() : ""}","${t.cancelledAt ? t.cancelledAt.toISOString() : ""}"\n`;
+      }
+
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", "attachment; filename=all_trips_report.csv");
+      return res.status(200).send(csvContent);
+    }
 
     if (scope === "vehicle") {
       const vehicle = await prisma.vehicle.findUnique({

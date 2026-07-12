@@ -5,13 +5,15 @@ import { authorize } from "../middleware/roleMiddleware.js";
 import { validateBody, validateQuery } from "../middleware/validationMiddleware.js";
 import { getExpensesQuerySchema, createExpenseSchema } from "../validators/expenseValidator.js";
 
+import { cacheMiddleware } from "../middleware/cacheMiddleware.js";
+
 const router = express.Router();
 
 // All expense routes require authentication
 router.use(protect);
 
 // GET is restricted to FLEET_MANAGER and FINANCIAL_ANALYST, validated with Zod
-router.get("/", authorize("FLEET_MANAGER", "FINANCIAL_ANALYST"), validateQuery(getExpensesQuerySchema), getExpenses);
+router.get("/", authorize("FLEET_MANAGER", "FINANCIAL_ANALYST"), cacheMiddleware, validateQuery(getExpensesQuerySchema), getExpenses);
 
 // POST is restricted to DRIVER, FLEET_MANAGER, and FINANCIAL_ANALYST, validated with Zod
 router.post("/", authorize("DRIVER", "FLEET_MANAGER", "FINANCIAL_ANALYST"), validateBody(createExpenseSchema), createExpense);

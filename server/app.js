@@ -12,6 +12,8 @@ import reportRoutes from "./routes/reportRoutes.js";
 import driverRoutes from "./routes/driverRoutes.js";
 import maintenanceRoutes from "./routes/maintenanceRoutes.js";
 
+import { invalidateCacheMiddleware } from "./middleware/cacheMiddleware.js";
+
 dotenv.config();
 
 const app = express();
@@ -19,6 +21,9 @@ const app = express();
 app.use(cors());
 
 app.use(express.json());
+
+// Invalidate in-memory database cache on all POST/PATCH/DELETE mutations
+app.use(invalidateCacheMiddleware);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);

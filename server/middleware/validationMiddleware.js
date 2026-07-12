@@ -2,9 +2,10 @@ import { errorResponse } from "../utils/response.js";
 
 export const validateBody = (schema) => {
   return (req, res, next) => {
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(req.body || {});
     if (!result.success) {
-      const message = result.error.errors
+      const issues = result.error.issues || result.error.errors || [];
+      const message = issues
         .map((e) => `${e.path.join(".")}: ${e.message}`)
         .join(", ");
       return errorResponse(res, "VALIDATION_ERROR", message, 400);
@@ -17,9 +18,10 @@ export const validateBody = (schema) => {
 
 export const validateQuery = (schema) => {
   return (req, res, next) => {
-    const result = schema.safeParse(req.query);
+    const result = schema.safeParse(req.query || {});
     if (!result.success) {
-      const message = result.error.errors
+      const issues = result.error.issues || result.error.errors || [];
+      const message = issues
         .map((e) => `${e.path.join(".")}: ${e.message}`)
         .join(", ");
       return errorResponse(res, "VALIDATION_ERROR", message, 400);
