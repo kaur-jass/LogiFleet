@@ -14,6 +14,26 @@ export const createVehicle = async (data) => {
     region,
   } = data;
 
+    const requiredFields = [
+    "regNumber",
+    "name",
+    "model",
+    "type",
+    "maxLoadCapacity",
+    "acquisitionCost",
+    ];
+
+    for (const field of requiredFields) {
+    if (
+        data[field] === undefined ||
+        data[field] === null ||
+        data[field] === ""
+    ) {
+        const error = new Error(`${field} is required`);
+        error.code = "VALIDATION_ERROR";
+        throw error;
+    }
+    }
   // Check duplicate registration number
   const existingVehicle = await prisma.vehicle.findUnique({
     where: {
@@ -82,6 +102,12 @@ export const getVehicles = async (query) => {
           mode: "insensitive",
         },
       },
+      {
+         type: {
+         contains: search,
+         mode: "insensitive",
+        },
+    },
     ];
   }
 
@@ -147,16 +173,15 @@ export const updateVehicle = async (id, data) => {
   }
 
   // Prevent updating status to protected values
-  if (
-    data.status &&
-    (data.status === "ON_TRIP" || data.status === "IN_SHOP")
-  ) {
+  const blockedStatuses = ["ON_TRIP", "IN_SHOP", "RETIRED"];
+
+    if (data.status && blockedStatuses.includes(data.status)) {
     const error = new Error(
-      "Vehicle status can only be changed through Trip or Maintenance."
+        "Vehicle status can only be changed through Trip or Maintenance."
     );
     error.code = "VALIDATION_ERROR";
     throw error;
-  }
+    }
 
   // Check duplicate regNumber
   if (data.regNumber && data.regNumber !== vehicle.regNumber) {

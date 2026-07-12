@@ -9,70 +9,52 @@ import {
   deleteVehicle,
 } from "../controllers/vehicleController.js";
 
-// Uncomment after Auth module is ready
-// import { authenticate, authorize } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { authorize } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-/*
-|--------------------------------------------------------------------------
-| GET Routes
-|--------------------------------------------------------------------------
-*/
+// ==========================
+// GET ROUTES
+// ==========================
 
-// GET /api/vehicles
-router.get("/", getVehicles);
+router.get("/", protect, getVehicles);
 
-// GET /api/vehicles/available
-router.get("/available", getAvailableVehicles);
+router.get("/available", protect, getAvailableVehicles);
 
-// GET /api/vehicles/:id
-router.get("/:id", getVehicleById);
+router.get("/:id", protect, getVehicleById);
 
-/*
-|--------------------------------------------------------------------------
-| POST Routes
-|--------------------------------------------------------------------------
-*/
+// ==========================
+// POST ROUTES
+// ==========================
 
-// router.post(
-//     "/",
-//     authenticate,
-//     authorize("FLEET_MANAGER"),
-//     createVehicle
-// );
+router.post(
+  "/",
+  protect,
+  authorize("FLEET_MANAGER"),
+  createVehicle
+);
 
-// Until Auth is ready
-router.post("/", createVehicle);
+// ==========================
+// PATCH ROUTES
+// ==========================
 
-/*
-|--------------------------------------------------------------------------
-| PATCH Routes
-|--------------------------------------------------------------------------
-*/
+router.patch(
+  "/:id",
+  protect,
+  authorize("FLEET_MANAGER"),
+  updateVehicle
+);
 
-// router.patch(
-//     "/:id",
-//     authenticate,
-//     authorize("FLEET_MANAGER"),
-//     updateVehicle
-// );
+// ==========================
+// DELETE ROUTES
+// ==========================
 
-router.patch("/:id", updateVehicle);
-
-/*
-|--------------------------------------------------------------------------
-| DELETE Routes
-|--------------------------------------------------------------------------
-*/
-
-// router.delete(
-//     "/:id",
-//     authenticate,
-//     authorize("FLEET_MANAGER"),
-//     deleteVehicle
-// );
-
-router.delete("/:id", deleteVehicle);
+router.delete(
+  "/:id",
+  protect,
+  authorize("FLEET_MANAGER"),
+  deleteVehicle
+);
 
 export default router;

@@ -2,7 +2,16 @@ import { errorResponse } from "../utils/response.js";
 
 export const authorize = (...allowedRoles) => {
   return (req, res, next) => {
-    if (!req.user || !req.user.role || !allowedRoles.includes(req.user.role)) {
+    if (!req.user) {
+      return errorResponse(
+        res,
+        "UNAUTHORIZED",
+        "Authentication required",
+        401
+      );
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
       return errorResponse(
         res,
         "FORBIDDEN",
@@ -10,6 +19,7 @@ export const authorize = (...allowedRoles) => {
         403
       );
     }
+
     next();
   };
 };
