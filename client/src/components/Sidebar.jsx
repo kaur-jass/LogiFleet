@@ -23,6 +23,22 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear stored authentication data
+    localStorage.clear();
+
+    // Replace current history entry
+    navigate("/", { replace: true });
+
+    // Prevent going back using browser history
+    const handleLogout = () => {
+      localStorage.clear();
+      navigate("/", { replace: true });
+    }
+  };
+
   return (
     <aside className="hidden w-80 shrink-0 border-r border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-[#111827] xl:flex xl:flex-col">
       {/* Brand */}
@@ -44,6 +60,7 @@ export default function Sidebar() {
       <nav className="flex-1 space-y-1.5 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+
           return (
             <NavLink
               key={item.to}
