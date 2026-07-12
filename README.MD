@@ -264,10 +264,10 @@ LogiFleet/
 
 | Contributor | Organizational Role Focus |
 | :--- | :--- |
-| **Jaspreet Kaur** | Data Architecture / API Engine Lead (BE1) |
-| **Manan Bansal** | Authentication / Validation Pipeline Engineer (BE2) |
-| **Simran Maurya** | State Management / Core View Architecture (FE1) |
-| **Maninder Saini** | Visualization UI / Responsive Design Engineer (FE2) |
+| **Jaspreet Kaur** | Data Architecture / API Engine Lead |
+| **Manan Bansal** | Authentication / Validation Pipeline Engineer  |
+| **Simran Maurya** | State Management / Core View Architecture |
+| **Maninder Saini** | Visualization UI / Responsive Design Engineer  |
 
 ---
 
