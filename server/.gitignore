@@ -5,3 +5,7 @@ node_modules
 /generated/prisma
 
 /generated/prisma
+
+scratch_test.js
+test_csv.js
+/prisma/seed.js

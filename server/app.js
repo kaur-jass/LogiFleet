@@ -4,6 +4,11 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes.js";
 import vehicleRoutes from "./routes/vehicleRoutes.js";
+import tripRoutes from "./routes/tripRoutes.js";
+import fuelLogRoutes from "./routes/fuelLogRoutes.js";
+import expenseRoutes from "./routes/expenseRoutes.js";
+import dashboardRoutes from "./routes/dashboardRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 dotenv.config();
 
@@ -15,6 +20,11 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/vehicles", vehicleRoutes);
+app.use("/api/trips", tripRoutes);
+app.use("/api/fuel-logs", fuelLogRoutes);
+app.use("/api/expenses", expenseRoutes);
+app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.get("/", (req, res) => {
 
