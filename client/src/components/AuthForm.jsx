@@ -27,13 +27,20 @@ const ROLE_OPTIONS = [
   { label: "Financial Analyst", value: "FINANCIAL_ANALYST" },
 ];
 
-// Where each role lands after a successful login
-const ROLE_REDIRECTS = {
-  FLEET_MANAGER: "/fleet/dashboard",
-  DRIVER: "/driver/dashboard",
-  SAFETY_OFFICER: "/safety/dashboard",
-  FINANCIAL_ANALYST: "/finance/dashboard",
-};
+export default function AuthForm({ 
+  isDarkMode: propIsDarkMode, 
+  setIsDarkMode: propSetIsDarkMode, 
+  isRegister: propIsRegister, 
+  setIsRegister: propSetIsRegister 
+}) {
+  // Local state fallbacks in case props are not passed by react-router-dom
+  const [localDarkMode, setLocalDarkMode] = useState(true);
+  const [localRegister, setLocalRegister] = useState(false);
+
+  const isDarkMode = propIsDarkMode !== undefined ? propIsDarkMode : localDarkMode;
+  const setIsDarkMode = propSetIsDarkMode || setLocalDarkMode;
+  const isRegister = propIsRegister !== undefined ? propIsRegister : localRegister;
+  const setIsRegister = propSetIsRegister || setLocalRegister;
 
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -75,25 +82,29 @@ const ROLE_REDIRECTS = {
       let response;
 
       if (isRegister) {
-        response = await API.post("/auth/register", formData);
-      } else {
-        response = await API.post("/auth/login", {
+        response = await API.post("/auth/register", {
+          name: formData.fullName,
           email: formData.email,
           password: formData.password,
           role: formData.role,
         });
+      } else {
+        response = await API.post("/auth/login", {
+          email: formData.email,
+          password: formData.password,
+        });
       }
 
       if (!isRegister) {
-        const { token, user, role } = response.data;
-        const resolvedRole = role || formData.role;
+        const { token, user } = response.data.data;
+        const resolvedRole = user.role || formData.role;
 
         localStorage.setItem("token", token);
         localStorage.setItem("user", JSON.stringify(user));
         localStorage.setItem("role", resolvedRole);
 
-        const destination = ROLE_REDIRECTS[resolvedRole] || "/";
-        window.location.href = destination;
+        // Redirect to /dashboard as all views are rendered under AppLayout children
+        window.location.href = "/dashboard";
         return;
       }
 
@@ -111,7 +122,7 @@ const ROLE_REDIRECTS = {
       console.log(response.data);
     } catch (err) {
       setError(
-        err.response?.data?.message || "Something went wrong"
+        err.response?.data?.error?.message || err.response?.data?.message || "Something went wrong"
       );
     } finally {
       setLoading(false);
@@ -130,6 +141,7 @@ const ROLE_REDIRECTS = {
         isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'
       }`}>
         <button
+          type="button"
           onClick={() => setIsDarkMode(false)}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
             !isDarkMode
@@ -140,6 +152,7 @@ const ROLE_REDIRECTS = {
           <Sun size={13} className="stroke-[2.5]" /> Light
         </button>
         <button
+          type="button"
           onClick={() => setIsDarkMode(true)}
           className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-semibold tracking-wide transition-all ${
             isDarkMode
@@ -152,7 +165,6 @@ const ROLE_REDIRECTS = {
       </div>
 
       {/* ================= LEFT SIDE: LOGIFLEET BRAND PANEL ================= */}
-      {/* Hidden below 768px per spec — truck, skyline, map pin and feature cards all live in here */}
       <div className="hidden md:flex w-full md:w-1/2 p-8 md:p-14 flex-col justify-between relative overflow-hidden bg-gradient-to-b from-[#FBC02D] to-[#F5B301]">
 
         {/* Decorative city skyline silhouette */}
@@ -226,7 +238,7 @@ const ROLE_REDIRECTS = {
       }`}>
         <div className="w-full max-w-sm mx-auto">
 
-          {/* Mobile-only logo (theme toggle + hero panel are hidden below 768px) */}
+          {/* Mobile-only logo */}
           <div className="flex md:hidden items-center gap-2 mb-8">
             <img src={logo} alt="LogiFleet logo" className="h-8 w-8 object-contain" />
             <span className={`font-bold text-lg ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>LogiFleet</span>
@@ -271,34 +283,7 @@ const ROLE_REDIRECTS = {
                     }`}
                   />
                 </div>
-
-                <div>
-                  <label className={`block text-[11px] font-semibold uppercase tracking-wider mb-1.5 transition-colors duration-300 ${
-                    isDarkMode ? 'text-slate-500' : 'text-slate-400'
-                  }`}>System Role</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 dark:text-slate-500">
-                      <Briefcase size={15} />
-                    </span>
-                    <select
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 transition-all ${
-                        isDarkMode
-                          ? "bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-600"
-                          : "bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400"
-                      }`}
-                    >
-                      <option value="" disabled>Select User Role</option>
-                      <option value="FLEET_MANAGER">Fleet Manager</option>
-                      <option value="DRIVER">Driver</option>
-                      <option value="SAFETY_OFFICER">Safety Officer</option>
-                      <option value="FINANCIAL_ANALYST">Financial Analyst</option>
-                    </select>
-                  </div>
-                </div>
-              </>
+              </div>
             )}
 
             <RoleSelect value={formData.role} onChange={handleRoleChange} isDarkMode={isDarkMode} />
