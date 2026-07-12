@@ -1,4 +1,4 @@
-import API from './api';
+import API from '../api/axios';
 
 export const getFleetSummary = async () => {
   return API.get('/reports/fleet-summary').then((res) => res.data);

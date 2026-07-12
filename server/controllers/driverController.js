@@ -104,7 +104,8 @@ export const updateDriver = async (req, res) => {
   try {
     const driver = await driverService.updateDriver(
       req.params.id,
-      req.body
+      req.body, 
+      req.user.role
     );
 
     return successResponse(res, {
@@ -115,6 +116,7 @@ export const updateDriver = async (req, res) => {
       NOT_FOUND: 404,
       CONFLICT: 409,
       VALIDATION_ERROR: 400,
+      FORBIDDEN: 403,
     };
 
     return errorResponse(

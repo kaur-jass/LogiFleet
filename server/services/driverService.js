@@ -107,7 +107,7 @@ export const getDriverById = async (id) => {
 // ==============================
 // UPDATE DRIVER
 // ==============================
-export const updateDriver = async (id, data) => {
+export const updateDriver = async (id, data, userRole) => {
   const driver = await prisma.driver.findUnique({
     where: {
       id,
@@ -119,6 +119,17 @@ export const updateDriver = async (id, data) => {
     error.code = "NOT_FOUND";
     throw error;
   }
+  // Only Safety Officer can suspend a driver
+    if (
+    data.status === "SUSPENDED" &&
+    userRole !== "SAFETY_OFFICER"
+    ) {
+    const error = new Error(
+        "Only Safety Officer can suspend drivers"
+    );
+    error.code = "FORBIDDEN";
+    throw error;
+    }
 
   // Duplicate License Number Check
   if (

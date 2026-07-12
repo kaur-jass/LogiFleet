@@ -1,4 +1,4 @@
-import API from './api';
+import API from '../api/axios';
 
 export const getFuelLogs = async () => {
   return API.get('/fuel-logs').then((res) => res.data);

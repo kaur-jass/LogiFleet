@@ -1,4 +1,4 @@
-import API from './api';
+import API from '../api/axios';
 
 export const getExpenses = async () => {
   return API.get('/expenses').then((res) => res.data);

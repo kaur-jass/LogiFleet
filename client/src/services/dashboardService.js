@@ -1,4 +1,4 @@
-import API from './api';
+import API from '../api/axios';
 
 export const getDashboardKpis = async () => {
   return API.get('/dashboard/kpis').then((res) => res.data);
