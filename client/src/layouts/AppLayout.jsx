@@ -20,12 +20,12 @@ export default function AppLayout() {
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="flex min-h-screen">
         <Sidebar />
-        <div className="flex-1">
-          <Navbar />
-          <main className="p-4 sm:p-6 lg:p-8">
-            <Outlet />
-          </main>
-        </div>
+        <div className="flex-1 min-w-0 overflow-hidden">
+  <Navbar />
+  <main className="h-[calc(100vh-80px)] overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8">
+    <Outlet />
+  </main>
+</div>
       </div>
     </div>
   );

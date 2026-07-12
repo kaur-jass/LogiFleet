@@ -6,6 +6,7 @@ import TripsPage from '../pages/TripsPage';
 import FuelPage from '../pages/FuelPage';
 import ExpensesPage from '../pages/ExpensesPage';
 import ReportsPage from '../pages/ReportsPage';
+import DriverPage from "../pages/DriverPage";
 
 const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
       { index: true, element: <AuthForm /> },
       { path: 'auth', element: <AuthForm /> },
       { path: 'dashboard', element: <DashboardPage /> },
+      { path: 'drivers', element: <DriverPage /> },
       { path: 'trips', element: <TripsPage /> },
       { path: 'fuel', element: <FuelPage /> },
       { path: 'expenses', element: <ExpensesPage /> },
