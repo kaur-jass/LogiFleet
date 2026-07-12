@@ -1,6 +1,7 @@
-import React from 'react';
-import { createBrowserRouter } from 'react-router-dom';
-import AppLayout from '../layouts/AppLayout';
+import React from "react";
+import { createBrowserRouter } from "react-router-dom";
+import AppLayout from "../layouts/AppLayout";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 // Lazy load route pages to support React Suspense boundaries
 const DashboardPage = React.lazy(() => import('../pages/DashboardPage'));
@@ -15,7 +16,7 @@ const MaintenancePage = React.lazy(() => import('../pages/MaintenancePage'));
 
 const router = createBrowserRouter([
   {
-    path: '/',
+    path: "/",
     element: <AppLayout />,
     children: [
       { index: true, element: <AuthForm /> },

@@ -66,6 +66,7 @@ export default function Sidebar() {
       <nav className="flex-1 space-y-1.5 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
+
           return (
             <NavLink
               key={item.to}
