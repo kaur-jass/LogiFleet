@@ -1,3 +1,8 @@
+// TransitOps — Prisma schema
+// Run: npx prisma generate && npx prisma db push
+// DATABASE_URL should point to your Neon connection string (use the pooled
+// connection string for the app, direct connection for migrations if needed).
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,10 +12,175 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ---------- Enums ----------
+
+enum Role {
+  FLEET_MANAGER
+  DRIVER
+  SAFETY_OFFICER
+  FINANCIAL_ANALYST
+}
+
+enum VehicleStatus {
+  AVAILABLE
+  ON_TRIP
+  IN_SHOP
+  RETIRED
+}
+
+enum DriverStatus {
+  AVAILABLE
+  ON_TRIP
+  OFF_DUTY
+  SUSPENDED
+}
+
+enum TripStatus {
+  DRAFT
+  DISPATCHED
+  COMPLETED
+  CANCELLED
+}
+
+enum MaintenanceStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum ExpenseType {
+  TOLL
+  MAINTENANCE
+  OTHER
+}
+
+// ---------- Models ----------
+
 model User {
-  id        Int      @id @default(autoincrement())
-  fullName  String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Vehicle {
+  id              String        @id @default(uuid())
+  regNumber       String        @unique
+  name            String
+  model           String
+  type            String
+  maxLoadCapacity Float
+  odometer        Float         @default(0)
+  acquisitionCost Float
+  status          VehicleStatus @default(AVAILABLE)
+  region          String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  trips           Trip[]
+  maintenanceLogs MaintenanceLog[]
+  fuelLogs        FuelLog[]
+  expenses        Expense[]
+
+  @@index([status])
+  @@index([type])
+  @@map("vehicles")
+}
+
+model Driver {
+  id              String       @id @default(uuid())
+  name            String
+  licenseNumber   String       @unique
+  licenseCategory String
+  licenseExpiry   DateTime
+  contactNumber   String
+  safetyScore     Float        @default(100)
+  status          DriverStatus @default(AVAILABLE)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  trips           Trip[]
+
+  @@index([status])
+  @@map("drivers")
+}
+
+model Trip {
+  id              String     @id @default(uuid())
+  source          String
+  destination     String
+  vehicleId       String
+  driverId        String
+  cargoWeight     Float
+  plannedDistance Float
+  actualDistance  Float?
+  fuelConsumed    Float?
+  // Not in the original spec's entity list, but required to compute
+  // Vehicle ROI = (Revenue - (Maintenance + Fuel)) / Acquisition Cost.
+  // Set at trip creation or on completion — team's call.
+  revenue         Float?     @default(0)
+  status          TripStatus @default(DRAFT)
+  createdAt       DateTime   @default(now())
+  dispatchedAt    DateTime?
+  completedAt     DateTime?
+  cancelledAt     DateTime?
+
+  vehicle         Vehicle    @relation(fields: [vehicleId], references: [id])
+  driver          Driver     @relation(fields: [driverId], references: [id])
+  fuelLogs        FuelLog[]
+
+  @@index([vehicleId])
+  @@index([driverId])
+  @@index([status])
+  @@map("trips")
+}
+
+model MaintenanceLog {
+  id          String            @id @default(uuid())
+  vehicleId   String
+  type        String
+  description String?
+  cost        Float
+  status      MaintenanceStatus @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  closedAt    DateTime?
+
+  vehicle     Vehicle           @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId])
+  @@index([status])
+  @@map("maintenance_logs")
+}
+
+model FuelLog {
+  id        String   @id @default(uuid())
+  vehicleId String
+  tripId    String?
+  liters    Float
+  cost      Float
+  date      DateTime @default(now())
+
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+  trip      Trip?    @relation(fields: [tripId], references: [id])
+
+  @@index([vehicleId])
+  @@map("fuel_logs")
+}
+
+model Expense {
+  id          String      @id @default(uuid())
+  vehicleId   String
+  type        ExpenseType
+  amount      Float
+  date        DateTime    @default(now())
+  description String?
+
+  vehicle     Vehicle     @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId])
+  @@map("expenses")
 }
